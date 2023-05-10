@@ -1,0 +1,108 @@
+USE my_db;
+
+CREATE EXTERNAL TABLE dc_temp (
+  page_id INT,
+  name STRING,
+  urlslug STRING,
+  ID INT,
+  ALIGN STRING,
+  EYE STRING,
+  HAIR STRING,
+  SEX STRING,
+  GSM STRING,
+  ALIVE STRING,
+  APPEARANCES STRING,
+  FIRST_APPEARANCE STRING,
+  YEAR STRING
+)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+WITH SERDEPROPERTIES (
+  'separatorChar' = ',',
+  'quoteChar' = '\"'
+)
+STORED AS TEXTFILE
+LOCATION '/user/maria_dev/dc_data';
+
+
+CREATE EXTERNAL TABLE marvel_temp (
+  page_id INT,
+  name STRING,
+  urlslug STRING,
+  ID INT,
+  ALIGN STRING,
+  EYE STRING,
+  HAIR STRING,
+  SEX STRING,
+  GSM STRING,
+  ALIVE STRING,
+  APPEARANCES STRING,
+  FIRST_APPEARANCE STRING,
+  YEAR STRING
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/user/maria_dev/marvel_data';
+
+
+CREATE TABLE concat_dataset (
+  page_id INT,
+  name STRING,
+  urlslug STRING,
+  ID INT,
+  ALIGN STRING,
+  EYE STRING,
+  HAIR STRING,
+  SEX STRING,
+  GSM STRING,
+  ALIVE STRING,
+  APPEARANCES STRING,
+  FIRST_APPEARANCE STRING,
+  YEAR STRING,
+  COMPANY STRING
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE;
+
+
+INSERT INTO concat_dataset
+SELECT page_id, name, urlslug, ID, ALIGN, EYE, HAIR, SEX, GSM, ALIVE, APPEARANCES, FIRST_APPEARANCE, YEAR, 'dc' as dataset
+FROM dc_temp
+UNION ALL
+SELECT page_id, name, urlslug, ID, ALIGN, EYE, HAIR, SEX, GSM, ALIVE, APPEARANCES, FIRST_APPEARANCE, YEAR, 'marvel' as dataset
+FROM marvel_temp;
+
+
+DROP TABLE dc_temp;
+DROP TABLE marvel_temp;
+
+
+CREATE TABLE concat_dataset_acid (
+  page_id INT,
+  name STRING,
+  urlslug STRING,
+  ID INT,
+  ALIGN STRING,
+  EYE STRING,
+  HAIR STRING,
+  SEX STRING,
+  GSM STRING,
+  ALIVE STRING,
+  APPEARANCES STRING,
+  FIRST_APPEARANCE STRING,
+  YEAR STRING,
+  COMPANY STRING
+)
+CLUSTERED BY (page_id) INTO 2 BUCKETS
+STORED AS ORC
+TBLPROPERTIES ('transactional'='true');
+
+
+INSERT INTO concat_dataset_acid
+SELECT *
+FROM concat_dataset
+WHERE name <> 'name';
+
+DROP TABLE concat_dataset;
+ALTER TABLE concat_dataset_acid RENAME TO superhero_data;

@@ -1,0 +1,9 @@
+use my_db;
+
+
+SELECT YEAR, 
+       SUM(CASE WHEN COMPANY = 'dc' THEN 1 ELSE 0 END) AS dc_count,
+       SUM(CASE WHEN COMPANY = 'marvel' THEN 1 ELSE 0 END) AS marvel_count
+FROM superhero_data
+GROUP BY YEAR
+ORDER BY YEAR;

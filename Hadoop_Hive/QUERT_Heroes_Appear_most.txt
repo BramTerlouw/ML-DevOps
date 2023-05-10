@@ -1,0 +1,7 @@
+use my_db;
+
+SELECT name, count(*) as count
+FROM superhero_data
+GROUP BY name
+ORDER BY count DESC
+LIMIT 10;
